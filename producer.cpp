@@ -5,11 +5,7 @@
 #include <semaphore.h>
 #include <sys/mman.h>
 #include <unistd.h>
-// #include <cstdio>
-// #include <cstdlib>
-// #include <cstring>
 #include <ctime>
-#include <iostream>
 #include <random>
 #include <time.h>
 
