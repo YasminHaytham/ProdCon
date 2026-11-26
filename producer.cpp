@@ -8,6 +8,9 @@
 #include <ctime>
 #include <random>
 #include <time.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cctype>
 
 const char *SHM_NAME = "/shm";
 const char *SEM_MUTEX = "/mutex";
@@ -42,7 +45,6 @@ void log_msg(const char *msg, ...) {
 }
 
 int main(int argc, char *argv[]) {
-  printf("Producer process started\n");
   if (argc != 6) {
     printf("Usage: ./producer NAME MEAN STDDEV SLEEP_MS N\n");
     return 1;
@@ -53,15 +55,14 @@ int main(int argc, char *argv[]) {
   for (int i = 0; name[i] != '\0'; i++) {
     name[i] = toupper((unsigned char)name[i]);
   }
-  float mean = atof(argv[2]);
-  float stddev = atof(argv[3]);
+  double mean = atof(argv[2]);
+  double stddev = atof(argv[3]);
   int sleep_ms = atoi(argv[4]);
   int N = atoi(argv[5]);
   printf(
       "Producer parameters: name=%s, mean=%f, stddev=%f, sleep_ms=%d, N=%d\n",
       name, mean, stddev, sleep_ms, N);
 
-  std::random_device rd;
   std::mt19937 rng(std::random_device{}());
   std::normal_distribution<double> dist(mean, stddev);
   size_t shm_size = sizeof(Shared_memory) + N * sizeof(Commodity);
@@ -90,7 +91,7 @@ int main(int argc, char *argv[]) {
   log_msg("%s: IPC ready", name);
   while (true) {
     double value = dist(rng);
-    log_msg("%s: generating anew value %.2f", name, value);
+    log_msg("%s: generating a new value %.2f", name, value);
     log_msg("%s: trying to get mutex on shared buffer", name);
     sem_wait(empty);
     sem_wait(mutex);
@@ -98,9 +99,9 @@ int main(int argc, char *argv[]) {
     shm_ptr->buffer[shm_ptr->in].name[name_len - 1] = '\0';
     shm_ptr->buffer[shm_ptr->in].price = value;
     shm_ptr->in = (shm_ptr-> in + 1) % N;
-    log_msg("%s: placing %.2f on shared buffer" , name , value);
     sem_post(mutex);
     sem_post(full);
+    log_msg("%s: placing %.2f on shared buffer" , name , value);
     log_msg("%s: sleeping for %d ms", name, sleep_ms);
     usleep(sleep_ms * 1000);
   }
